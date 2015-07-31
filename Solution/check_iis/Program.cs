@@ -107,19 +107,19 @@ namespace MonitoringPluginsForWindows
 
             var p = GetP();
 
-            p.Setup<bool>('a', "inventory-apppools")
-                .WithDescription("Switch to use to provide inventory of AppPools.")
-                .Callback(value => do_inventory_apppools = value);
-
-            p.Setup<bool>('A', "inventory-websites")
+            p.Setup<bool>('a', "inventory-websites")
                 .WithDescription("Switch to use to provide inventory of Sites")
                 .Callback(value => do_inventory_sites = value);
 
-            p.Setup<bool>('B', "check-websites")
+            p.Setup<bool>('A', "inventory-apppools")
+                .WithDescription("Switch to use to provide inventory of AppPools")
+                .Callback(value => do_inventory_apppools = value);
+
+            p.Setup<bool>('b', "check-websites")
                 .WithDescription("Switch to use to check the health status of the local Sites")
                 .Callback(value => do_sites = value);
 
-            p.Setup<bool>('C', "check-apppools")
+            p.Setup<bool>('B', "check-apppools")
                 .WithDescription("Switch to use to check the health status of the local AppPools")
                 .Callback(value => do_apppools = value);
 
@@ -134,51 +134,51 @@ namespace MonitoringPluginsForWindows
                 .SetDefault("readable");
 
             p.Setup<List<string>>('F', "excluded-sites")
-                .WithDescription("Excludes Sites from checks and inventory. Provide multiple with spaces between")
+                .WithDescription("Excludes Sites from checks and inventory")
                 .Callback(items => temp_excluded_sites = items);
 
             p.Setup<List<string>>('G', "included-sites")
-                .WithDescription("Includes Sites to check while all other Sites are excluded, affects both checks and inventory. Provide multiple with spaces between")
+                .WithDescription("Includes Sites to check while all other Sites are excluded, affects both checks and inventory")
                 .Callback(items => temp_included_sites = items);
 
             p.Setup<List<string>>('h', "stopped-sites")
-                .WithDescription("\tThe specified Sites are checked that they are stopped. Provide multiple with spaces between")
+                .WithDescription("\tThe specified Sites are checked that they are stopped")
                 .Callback(items => temp_stopped_sites = items);
 
             p.Setup<List<string>>('H', "warn-sites")
-                .WithDescription("\tThese specified Sites will return Warning if they are not in the expected state. Provide multiple with spaces between")
+                .WithDescription("\tThese specified Sites will return Warning if they are not in the expected state")
                 .Callback(items => temp_warn_sites = items);
 
             p.Setup<bool>('i', "perfcounter-sites")
-                .WithDescription("Switch to use to get perfcounters from local Sites")
+                .WithDescription("Switch to use to get perfcounters from Sites")
                 .Callback(value => do_perfcounter_sites = value);
 
             p.Setup<List<string>>('I', "excluded-apppools")
-                .WithDescription("Excludes AppPools from checks and inventory. Provide multiple with spaces between")
+                .WithDescription("Excludes AppPools from checks and inventory")
                 .Callback(items => temp_excluded_apppools = items);
 
             p.Setup<List<string>>('J', "included-apppools")
-                .WithDescription("Includes apppools to check while all other AppPools are excluded, affects both checks and inventory. Provide multiple with spaces between")
+                .WithDescription("Includes AppPools to check while all other AppPools are excluded, affects both checks and inventory")
                 .Callback(items => temp_included_apppools = items);
 
             p.Setup<List<string>>('k', "stopped-apppools")
-                .WithDescription("The specified AppPools are checked that they are stopped. Provide multiple with spaces between")
+                .WithDescription("The specified AppPools are checked that they are stopped")
                 .Callback(items => temp_stopped_apppools = items);
 
             p.Setup<List<string>>('K', "warn-apppools")
-                .WithDescription("\tThe specified AppPools will return Warning if they are not in the expected state. Provide multiple with spaces between")
+                .WithDescription("\tThe specified AppPools will return Warning if they are not in the expected state")
                 .Callback(items => temp_warn_apppools = items);
 
             p.Setup<bool>('l', "perfcounter-apppools")
-                .WithDescription("Switch to use to get perfcounters from local AppPools")
+                .WithDescription("Switch to use to get perfcounters from AppPools")
                 .Callback(value => do_perfcounter_apppools = value);
 
             p.Setup<bool>('L', "skip-empty-apppools")
-                .WithDescription("Switch which sets do not inventory AppPools which are empty or unused.")
+                .WithDescription("Switch which sets do not check or inventory AppPools which are empty")
                 .Callback(value => do_skip_empty_apppools = value);
 
             p.Setup<bool>('T', "hide-long-output")
-                .WithDescription("Switch to hide the long service output, only prints the summary output and any Sites or Services deviating from 'OK'")
+                .WithDescription("Switch to hide the long service output, only prints the summary output and any Sites or AppPools deviating from 'OK'")
                 .Callback(value => do_hide_long_output = value);
 
             p.Setup<string>('u', "expected-state")
@@ -190,15 +190,15 @@ namespace MonitoringPluginsForWindows
                 .Callback(value => do_i2 = value);
 
             p.Setup<bool>('W', "single-check")
-                .WithDescription("\tSwitch used together with the Icinga2 Auto Apply rules, this is set when there is a single Site or AppPool to check. Do take great care if you use this outside of the auto apply rules.")
+                .WithDescription("\tSwitch used together with the Icinga2 Auto Apply rules, this is set when there is a single Site or AppPool to check. Do take great care if you use this outside of the auto apply rules")
                 .Callback(value => do_singluar_check = value);
 
             p.Setup<string>('x', "split-by")
-                .WithDescription("\tArgument used to specify what splits all Sites and AppPool arguments. Default is a single space, ' '.")
+                .WithDescription("\tArgument used to specify what splits all Sites and AppPool arguments. Default is a single space, ' '")
                 .Callback(value => split_by = value);
 
             p.Setup<bool>('X', "inv-hide-empty")
-                .WithDescription("Switch to hide empty vars from inventory output.")
+                .WithDescription("Switch to hide empty vars from inventory output")
                 .Callback(value => do_skip_empty_vars = value);
 
             p.Setup<bool>('y', "inv-running-only")
@@ -207,7 +207,7 @@ namespace MonitoringPluginsForWindows
 
             p.Setup<bool>('z', "verbose")
                 .Callback(value => do_verbose = value)
-                .WithDescription("\tSwitch to use when trying to figure out why a service is not included, excluded or similarly when the returned output is not as expected")
+                .WithDescription("\tSwitch to use when trying to figure out why a Site or an AppPool is not included, excluded or similarly when the returned output is not as expected")
                 .SetDefault(false);
 
             p.Setup<bool>('Z', "debug")
@@ -218,30 +218,32 @@ namespace MonitoringPluginsForWindows
             p.SetupHelp("?", "help")
                 .Callback(text => Console.WriteLine(text))
                 .UseForEmptyArgs()
-                .WithHeader(System.AppDomain.CurrentDomain.FriendlyName + " - Windows Service Status plugin for Icinga2, Icinga, Centreon, Shinken, Naemon and other nagios like systems.\n\tVersion: " + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
+                .WithHeader(System.AppDomain.CurrentDomain.FriendlyName + " - Windows Service Status plugin for Icinga2, Icinga, Centreon, Shinken, Naemon and other nagios like systems\n\tVersion: " + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
 
             var result = p.Parse(args);
 
             if ((do_apppools == false) && (do_inventory_apppools == false) && (do_inventory_sites == false) && (do_sites == false))
             {
                 // Not going to check Inventory or Checks, no parameters specified for it.
+                Console.WriteLine("Neither health check or inventory switches have been specified");
                 return (int)ServiceState.ServiceUnknown;
             }
 
             // Lets see which of the supplied switches changed anything in the include/exclude/stopped context
-            HandleArguments(temp_excluded_sites, temp_included_sites, temp_stopped_sites, temp_warn_sites, 
-                temp_excluded_apppools, temp_included_apppools, temp_stopped_apppools, temp_warn_apppools, split_by);
+            HandleArguments(do_sites, do_apppools, do_inventory_sites, do_inventory_apppools, temp_excluded_sites, temp_included_sites, temp_stopped_sites, 
+                temp_warn_sites, temp_excluded_apppools, temp_included_apppools, temp_stopped_apppools, temp_warn_apppools, split_by);
 
             // Inventory is blocked from running at the same time as other checks, thus it is run first if specified.
             if (do_inventory_apppools == true || do_inventory_sites == true)
             {
-                temp = IisInventory(do_sites, do_apppools, do_inventory_sites, do_inventory_apppools, inventory_format, inventory_level, do_all_running_only, do_skip_empty_vars, do_skip_empty_apppools);
+                temp = IisInventory(do_sites, do_apppools, do_inventory_sites, do_inventory_apppools, inventory_format, inventory_level, do_all_running_only, 
+                    do_skip_empty_vars, do_skip_empty_apppools);
                 return temp;
             }
 
             if (do_apppools == true)
             {
-                returncode = CheckAllAppPools(returncode, do_perfcounter_apppools, do_singluar_check, expected_state);
+                returncode = CheckAllAppPools(returncode, do_perfcounter_apppools, do_singluar_check, expected_state, do_skip_empty_apppools);
             }
             if (do_sites == true)
             {
@@ -276,8 +278,10 @@ namespace MonitoringPluginsForWindows
             }
         }
 
-        private static void HandleArguments(List<string> temp_excluded_sites, List<string> temp_included_sites, List<string> temp_stopped_sites, List<string> temp_warn_sites,
-            List<string> temp_excluded_apppools, List<string> temp_included_apppools, List<string> temp_stopped_apppools, List<string> temp_warn_apppools, string split_by)
+        private static void HandleArguments(bool do_sites, bool do_apppools, bool do_inventory_sites, bool do_inventory_apppools, 
+            List<string> temp_excluded_sites, List<string> temp_included_sites, List<string> temp_stopped_sites, List<string> temp_warn_sites,
+            List<string> temp_excluded_apppools, List<string> temp_included_apppools, List<string> temp_stopped_apppools, List<string> temp_warn_apppools, 
+            string split_by)
         {
             if (temp_excluded_sites.Count > 0)
             {
@@ -327,60 +331,66 @@ namespace MonitoringPluginsForWindows
                 PrintArray("warn_apppools", warn_apppools);
             }
 
-            if (excluded_sites.Contains("thisshouldprobablyneverbeoverwrittenbysomething"))
+            if (do_sites || do_inventory_sites)
             {
-                if (do_verbose == true)
-                    Console.WriteLine("INFO: Default excluded_sites list.");
-                bDefaultSitesExcluded = true;
+                if (excluded_sites.Contains("thisshouldprobablyneverbeoverwrittenbysomething"))
+                {
+                    if (do_verbose == true)
+                        Console.WriteLine("INFO: Default excluded_sites list.");
+                    bDefaultSitesExcluded = true;
+                }
+
+                if (included_sites.Contains("thisshouldprobablyneverbeoverwrittenbysomething"))
+                {
+                    if (do_verbose == true)
+                        Console.WriteLine("INFO: Default included_sites list.");
+                    bDefaultSitesIncluded = true;
+                }
+
+                if (stopped_sites.Contains("thisshouldprobablyneverbeoverwrittenbysomething"))
+                {
+                    if (do_verbose == true)
+                        Console.WriteLine("INFO: Default stopped_sites list.");
+                    bDefaultSitesStopped = true;
+                }
+
+                if (warn_sites.Contains("thisshouldprobablyneverbeoverwrittenbysomething"))
+                {
+                    if (do_verbose == true)
+                        Console.WriteLine("INFO: Default warn_sites list.");
+                    bDefaultSitesWarn = true;
+                }
             }
 
-            if (included_sites.Contains("thisshouldprobablyneverbeoverwrittenbysomething"))
+            if (do_apppools || do_inventory_apppools)
             {
-                if (do_verbose == true)
-                    Console.WriteLine("INFO: Default included_sites list.");
-                bDefaultSitesIncluded = true;
-            }
+                if (excluded_apppools.Contains("thisshouldprobablyneverbeoverwrittenbysomething"))
+                {
+                    if (do_verbose == true)
+                        Console.WriteLine("INFO: Default excluded_apppools list.");
+                    bDefaultAppPoolsExcluded = true;
+                }
 
-            if (stopped_sites.Contains("thisshouldprobablyneverbeoverwrittenbysomething"))
-            {
-                if (do_verbose == true)
-                    Console.WriteLine("INFO: Default stopped_sites list.");
-                bDefaultSitesStopped = true;
-            }
+                if (included_apppools.Contains("thisshouldprobablyneverbeoverwrittenbysomething"))
+                {
+                    if (do_verbose == true)
+                        Console.WriteLine("INFO: Default included_apppools list.");
+                    bDefaultAppPoolsIncluded = true;
+                }
 
-            if (warn_sites.Contains("thisshouldprobablyneverbeoverwrittenbysomething"))
-            {
-                if (do_verbose == true)
-                    Console.WriteLine("INFO: Default warn_sites list.");
-                bDefaultSitesWarn = true;
-            }
+                if (stopped_apppools.Contains("thisshouldprobablyneverbeoverwrittenbysomething"))
+                {
+                    if (do_verbose == true)
+                        Console.WriteLine("INFO: Default stopped_apppools list.");
+                    bDefaultAppPoolsStopped = true;
+                }
 
-            if (excluded_apppools.Contains("thisshouldprobablyneverbeoverwrittenbysomething"))
-            {
-                if (do_verbose == true)
-                    Console.WriteLine("INFO: Default excluded_apppools list.");
-                bDefaultAppPoolsExcluded = true;
-            }
-
-            if (included_apppools.Contains("thisshouldprobablyneverbeoverwrittenbysomething"))
-            {
-                if (do_verbose == true)
-                    Console.WriteLine("INFO: Default included_apppools list.");
-                bDefaultAppPoolsIncluded = true;
-            }
-
-            if (stopped_apppools.Contains("thisshouldprobablyneverbeoverwrittenbysomething"))
-            {
-                if (do_verbose == true)
-                    Console.WriteLine("INFO: Default stopped_apppools list.");
-                bDefaultAppPoolsStopped = true;
-            }
-
-            if (warn_apppools.Contains("thisshouldprobablyneverbeoverwrittenbysomething"))
-            {
-                if (do_verbose == true)
-                    Console.WriteLine("INFO: Default warn_apppools list.");
-                bDefaultAppPoolsWarn = true;
+                if (warn_apppools.Contains("thisshouldprobablyneverbeoverwrittenbysomething"))
+                {
+                    if (do_verbose == true)
+                        Console.WriteLine("INFO: Default warn_apppools list.");
+                    bDefaultAppPoolsWarn = true;
+                }
             }
             return;
         }
@@ -576,7 +586,7 @@ namespace MonitoringPluginsForWindows
                 if (do_verbose)
                     Console.WriteLine("INFO: Inventory of AppPools to check later");
 
-                temp = InventoryAppPools(iisManager, false, false, false, false);
+                temp = InventoryAppPools(iisManager, false, false, false, do_skip_empty_apppools);
 
                 if (temp == false)
                     return (int)ServiceState.ServiceUnknown;
@@ -837,14 +847,14 @@ namespace MonitoringPluginsForWindows
                     }
                 }
 
-                if (do_skip_empty_apppools == true && do_inventory == true)
+                if (do_skip_empty_apppools == true)
                 {
                     int NumberOfTimesUsed = GetNumberApplicationsInAppPool(iisManager, sAppPoolName);
                     if (NumberOfTimesUsed == 0)
                     {
                         if (do_verbose)
                             Console.WriteLine("INFO: AppPool '" + sAppPoolName + "' is not used by any Applications, this is being skipped due to skip-empty-apppools set");
-                        // Skip, this AppPool is not used anywhere
+                        // Skip this AppPool as it not used by any sites.
                         continue;
                     }
                 }
@@ -1165,6 +1175,7 @@ namespace MonitoringPluginsForWindows
                 if (iNumberOfSites == 0)
                 {
                     outputSites = "No Sites matched the filters given, or none exist on this server.";
+                    returncode = (int)ServiceState.ServiceUnknown;
                 }
                 if (iNumberOfSites == 1)
                 {
@@ -1189,12 +1200,12 @@ namespace MonitoringPluginsForWindows
             return returncode;
         }
 
-        public static int CheckAllAppPools(int returncode, bool do_perfcounter_apppools, bool do_singluar_check, string expected_state)
+        public static int CheckAllAppPools(int returncode, bool do_perfcounter_apppools, bool do_singluar_check, string expected_state, bool do_skip_empty_apppools)
         {
             var iisManager = new ServerManager();
 
             bool temp = false;
-            temp = InventoryAppPools(iisManager, false, false, false, false);
+            temp = InventoryAppPools(iisManager, false, false, false, do_skip_empty_apppools);
             if (temp == false)
                 return (int)ServiceState.ServiceUnknown;
 
@@ -1344,6 +1355,7 @@ namespace MonitoringPluginsForWindows
                 if (iNumberOfAppPools == 0)
                 {
                     outputAppPools = "No AppPools matched the filters given, or none exist on this server.";
+                    returncode = (int)ServiceState.ServiceUnknown;
                 }
                 if (iNumberOfAppPools == 1)
                 {
