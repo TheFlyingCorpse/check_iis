@@ -1,71 +1,79 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Diagnostics;
-using Microsoft.Win32;
-using Microsoft.Web.Administration;
+﻿using Fclp;
 using Icinga;
-using Fclp;
+using Microsoft.Web.Administration;
+using Microsoft.Win32;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 
 namespace MonitoringPluginsForWindows
 {
-    class check_iis
+    public class check_iis
     {
+        private static List<string> listPerfData = new List<string>();
+        private static List<string> listSiteOutput = new List<string>();
+        private static List<string> listAppPoolOutput = new List<string>();
 
-        static List<string> listPerfData = new List<string>();
-        static List<string> listSiteOutput = new List<string>();
-        static List<string> listAppPoolOutput = new List<string>();
+        private static List<IISInventory> listIISInventory = new List<IISInventory>();
+        private static List<AppPool> listAppPoolsOnComputer = new List<AppPool>();
+        private static List<WebSite> listSitesOnComputer = new List<WebSite>();
+        private static List<string> listStoppedSites = new List<string>();
+        private static List<string> listStartedSites = new List<string>();
+        private static List<string> listStoppedAppPools = new List<string>();
+        private static List<string> listStartedAppPools = new List<string>();
 
-        static List<IISInventory> listIISInventory = new List<IISInventory>();
-        static List<AppPool> listAppPoolsOnComputer = new List<AppPool>();
-        static List<WebSite> listSitesOnComputer = new List<WebSite>();
-        static List<string> listStoppedSites = new List<string>();
-        static List<string> listStartedSites = new List<string>();
-        static List<string> listStoppedAppPools = new List<string>();
-        static List<string> listStartedAppPools = new List<string>();
+        private static string[] excluded_sites = new string[] { "thisshouldprobablyneverbeoverwrittenbysomething" };
+        private static string[] included_sites = new string[] { "thisshouldprobablyneverbeoverwrittenbysomething" };
+        private static string[] stopped_sites = new string[] { "thisshouldprobablyneverbeoverwrittenbysomething" };
+        private static string[] warn_sites = new string[] { "thisshouldprobablyneverbeoverwrittenbysomething" };
 
-        static string outputAppPools = "";
-        static string outputSites = "";
-        static string iisVersion = "unspecified";
+        private static string[] excluded_apppools = new string[] { "thisshouldprobablyneverbeoverwrittenbysomething" };
+        private static string[] included_apppools = new string[] { "thisshouldprobablyneverbeoverwrittenbysomething" };
+        private static string[] stopped_apppools = new string[] { "thisshouldprobablyneverbeoverwrittenbysomething" };
+        private static string[] warn_apppools = new string[] { "thisshouldprobablyneverbeoverwrittenbysomething" };
 
-        static bool errorAppPools = false;
-        static bool errorSites = false;
+        private static string outputAppPools = "";
+        private static string outputSites = "";
+        private static string iisVersion = "unspecified";
 
-        static bool do_debug = false;
-        static bool do_verbose = false;
-        static bool do_i2 = false;
+        private static bool errorAppPools = false;
+        private static bool errorSites = false;
 
-        static bool bDefaultSitesIncluded = false;
-        static bool bDefaultSitesExcluded = false;
-        static bool bDefaultSitesStopped = false;
-        static bool bDefaultSitesWarn = false;
+        private static bool do_debug = false;
+        private static bool do_verbose = false;
+        private static bool do_i2 = false;
 
-        static bool bDefaultAppPoolsIncluded = false;
-        static bool bDefaultAppPoolsExcluded = false;
-        static bool bDefaultAppPoolsStopped = false;
-        static bool bDefaultAppPoolsWarn = false;
+        private static bool bDefaultSitesIncluded = false;
+        private static bool bDefaultSitesExcluded = false;
+        private static bool bDefaultSitesStopped = false;
+        private static bool bDefaultSitesWarn = false;
 
-        static int iNumberOfAppPools = 0;
-        static int iNumberOfStartedAppPools = 0;
-        static int iNumberOfStoppedAppPools = 0;
-        static int iNumberOfStoppingAppPools = 0;
-        static int iNumberOfStartingAppPools = 0;
-        static int iNumberOfUnknownAppPools = 0;
-        static int iNumberOfCorrectAppPools = 0;
-        static int iNumberOfWrongAppPools = 0;
+        private static bool bDefaultAppPoolsIncluded = false;
+        private static bool bDefaultAppPoolsExcluded = false;
+        private static bool bDefaultAppPoolsStopped = false;
+        private static bool bDefaultAppPoolsWarn = false;
 
-        static int iNumberOfSites = 0;
-        static int iNumberOfStartedSites = 0;
-        static int iNumberOfStoppedSites = 0;
-        static int iNumberOfStoppingSites = 0;
-        static int iNumberOfStartingSites = 0;
-        static int iNumberOfUnknownSites = 0;
-        static int iNumberOfCorrectSites = 0;
-        static int iNumberOfWrongSites = 0;
+        private static int iNumberOfAppPools = 0;
+        private static int iNumberOfStartedAppPools = 0;
+        private static int iNumberOfStoppedAppPools = 0;
+        private static int iNumberOfStoppingAppPools = 0;
+        private static int iNumberOfStartingAppPools = 0;
+        private static int iNumberOfUnknownAppPools = 0;
+        private static int iNumberOfCorrectAppPools = 0;
+        private static int iNumberOfWrongAppPools = 0;
 
-        static int Main(string[] args)
+        private static int iNumberOfSites = 0;
+        private static int iNumberOfStartedSites = 0;
+        private static int iNumberOfStoppedSites = 0;
+        private static int iNumberOfStoppingSites = 0;
+        private static int iNumberOfStartingSites = 0;
+        private static int iNumberOfUnknownSites = 0;
+        private static int iNumberOfCorrectSites = 0;
+        private static int iNumberOfWrongSites = 0;
+
+        private static int Main(string[] args)
         {
             int returncode = 0;
             int temp = 3;
@@ -80,20 +88,12 @@ namespace MonitoringPluginsForWindows
             bool do_skip_empty_vars = false;
             bool do_singluar_check = false;
             bool do_skip_empty_apppools = false;
+            bool do_hide_long_output = false;
 
             string inventory_format = "readable";
             string inventory_level = "normal";
             string expected_state = "NotSet";
-
-            string[] excluded_sites = new string[] { "thisshouldprobablyneverbeoverwrittenbysomething" };
-            string[] included_sites = new string[] { "thisshouldprobablyneverbeoverwrittenbysomething" };
-            string[] stopped_sites = new string[] { "thisshouldprobablyneverbeoverwrittenbysomething" };
-            string[] warn_sites = new string[] { "thisshouldprobablyneverbeoverwrittenbysomething" };
-
-            string[] excluded_apppools = new string[] { "thisshouldprobablyneverbeoverwrittenbysomething" };
-            string[] included_apppools = new string[] { "thisshouldprobablyneverbeoverwrittenbysomething" };
-            string[] stopped_apppools = new string[] { "thisshouldprobablyneverbeoverwrittenbysomething" };
-            string[] warn_apppools = new string[] { "thisshouldprobablyneverbeoverwrittenbysomething" };
+            string split_by = " ";
 
             List<string> temp_excluded_sites = new List<string>();
             List<string> temp_included_sites = new List<string>();
@@ -107,110 +107,118 @@ namespace MonitoringPluginsForWindows
 
             var p = GetP();
 
-            p.Setup<bool>('Z', "debug")
-                .Callback(value => do_debug = value)
-                .WithDescription("\t\tParameter to to get maximum verbosity (for debugging)")
-                .SetDefault(false);
-
-            p.Setup<bool>('v', "verbose")
-                .Callback(value => do_verbose = value)
-                .WithDescription("\tParameter to use when trying to figure out why a service is not included, excluded or similarly when the returned output is not as expected")
-                .SetDefault(false);
-
-            p.Setup<bool>('A', "inventory-websites")
-                .WithDescription("Parameter to use to provide inventory instead of checking for the health.")
-                .Callback(value => do_inventory_sites = value);
-
             p.Setup<bool>('a', "inventory-apppools")
-                .WithDescription("Parameter to use to provide inventory instead of checking for the health.")
+                .WithDescription("Switch to use to provide inventory of AppPools.")
                 .Callback(value => do_inventory_apppools = value);
 
+            p.Setup<bool>('A', "inventory-websites")
+                .WithDescription("Switch to use to provide inventory of Sites")
+                .Callback(value => do_inventory_sites = value);
+
             p.Setup<bool>('B', "check-websites")
-                .WithDescription("Parameter to use to check the health status of the local Sites")
+                .WithDescription("Switch to use to check the health status of the local Sites")
                 .Callback(value => do_sites = value);
 
             p.Setup<bool>('C', "check-apppools")
-                .WithDescription("Parameter to use to check the health status of the local AppPools")
+                .WithDescription("Switch to use to check the health status of the local AppPools")
                 .Callback(value => do_apppools = value);
-
-            p.Setup<string>('f', "inv-format")
-                .Callback(value => inventory_format = value)
-                .WithDescription("\tOptional: Parameter to provide output of the inventory in other formats, valid options are 'readable', 'i2conf' and 'json'")
-                .SetDefault("readable");
 
             p.Setup<string>('E', "inv-level")
                 .Callback(value => inventory_level = value)
-                .WithDescription("\tOptional: Parameter to change the level of output. Default is 'normal', available options are 'normal','full'")
+                .WithDescription("\tArgument to change the level of output. Default is 'normal', available options are 'normal','full'")
                 .SetDefault("normal");
 
-            p.Setup<bool>('X', "inv-running-only")
-                .WithDescription("Only inventory running Sites and/or AppPools, depending on what has been selected for inventory")
-                .Callback(value => do_all_running_only = value);
-
-            p.Setup<bool>('x', "hide-empty-vars")
-                .WithDescription("Only print returned data that has values in them, skip empty arrays and vars.")
-                .Callback(value => do_skip_empty_vars = value);
-
-            p.Setup<bool>('W', "icinga2")
-                .WithDescription("\tUsed in the Icinga2 CommandDefinition, returns output and perfcounter to the correct class. Do not use via command line.")
-                .Callback(value => do_i2 = value);
-
-            p.Setup<bool>('V', "single-check")
-                .WithDescription("\tUsed together with the Icinga2 Auto Apply rules, this is set when there is a single Site or AppPool to check. Do take great care if you use this outside of the auto apply rules.")
-                .Callback(value => do_singluar_check = value);
-
-            p.Setup<bool>('U', "skip-empty-apppools")
-                .WithDescription("Optional: Do not inventory AppPools which are empty.")
-                .Callback(value => do_skip_empty_apppools = value);
-
-            p.Setup<string>('w', "expected-state")
-                .Callback(value => expected_state = value)
-                .WithDescription("Optional: Parameter to provide the expected State of the AppPool or Site, used together with --single-check");
+            p.Setup<string>('f', "inv-format")
+                .Callback(value => inventory_format = value)
+                .WithDescription("\tArgument to provide output of the inventory in other formats, valid options are 'readable', 'i2conf' and 'json'")
+                .SetDefault("readable");
 
             p.Setup<List<string>>('F', "excluded-sites")
-                .WithDescription("Optional: Excludes sites from checks and inventory. Provide multiple with spaces between")
+                .WithDescription("Excludes Sites from checks and inventory. Provide multiple with spaces between")
                 .Callback(items => temp_excluded_sites = items);
 
             p.Setup<List<string>>('G', "included-sites")
-                .WithDescription("Optional: Includes sites to check while all other sites are excluded, affects both checks and inventory. Provide multiple with spaces between")
+                .WithDescription("Includes Sites to check while all other Sites are excluded, affects both checks and inventory. Provide multiple with spaces between")
                 .Callback(items => temp_included_sites = items);
 
-            p.Setup<List<string>>('H', "stopped-sites")
-                .WithDescription("\tOptional: These sites are checked that they are stopped. Provide multiple with spaces between")
+            p.Setup<List<string>>('h', "stopped-sites")
+                .WithDescription("\tThe specified Sites are checked that they are stopped. Provide multiple with spaces between")
                 .Callback(items => temp_stopped_sites = items);
 
-            p.Setup<List<string>>('h', "warn-sites")
-                .WithDescription("\tOptional: These sites will return Warning if they are not in the expected state. Provide multiple with spaces between")
+            p.Setup<List<string>>('H', "warn-sites")
+                .WithDescription("\tThese specified Sites will return Warning if they are not in the expected state. Provide multiple with spaces between")
                 .Callback(items => temp_warn_sites = items);
 
+            p.Setup<bool>('i', "perfcounter-sites")
+                .WithDescription("Switch to use to get perfcounters from local Sites")
+                .Callback(value => do_perfcounter_sites = value);
+
             p.Setup<List<string>>('I', "excluded-apppools")
-                .WithDescription("Optional: Excludes apppools from checks and inventory. Provide multiple with spaces between")
+                .WithDescription("Excludes AppPools from checks and inventory. Provide multiple with spaces between")
                 .Callback(items => temp_excluded_apppools = items);
 
             p.Setup<List<string>>('J', "included-apppools")
-                .WithDescription("Optional: Includes apppools to check while all other apppools are excluded, affects both checks and inventory. Provide multiple with spaces between")
+                .WithDescription("Includes apppools to check while all other AppPools are excluded, affects both checks and inventory. Provide multiple with spaces between")
                 .Callback(items => temp_included_apppools = items);
 
-            p.Setup<List<string>>('K', "stopped-apppools")
-                .WithDescription("Optional: These apppools are checked that they are stopped. Provide multiple with spaces between")
+            p.Setup<List<string>>('k', "stopped-apppools")
+                .WithDescription("The specified AppPools are checked that they are stopped. Provide multiple with spaces between")
                 .Callback(items => temp_stopped_apppools = items);
 
-            p.Setup<List<string>>('k', "warn-apppools")
-                .WithDescription("\tOptional: These apppools will return Warning if they are not in the expected state. Provide multiple with spaces between")
+            p.Setup<List<string>>('K', "warn-apppools")
+                .WithDescription("\tThe specified AppPools will return Warning if they are not in the expected state. Provide multiple with spaces between")
                 .Callback(items => temp_warn_apppools = items);
 
-            p.Setup<bool>('L', "perfcounter-sites")
-                .WithDescription("Parameter to use to get perfcounters from local Sites")
-                .Callback(value => do_perfcounter_sites = value);
-
-            p.Setup<bool>('M', "perfcounter-apppools")
-                .WithDescription("Parameter to use to get perfcounters from local AppPools")
+            p.Setup<bool>('l', "perfcounter-apppools")
+                .WithDescription("Switch to use to get perfcounters from local AppPools")
                 .Callback(value => do_perfcounter_apppools = value);
+
+            p.Setup<bool>('L', "skip-empty-apppools")
+                .WithDescription("Switch which sets do not inventory AppPools which are empty or unused.")
+                .Callback(value => do_skip_empty_apppools = value);
+
+            p.Setup<bool>('T', "hide-long-output")
+                .WithDescription("Switch to hide the long service output, only prints the summary output and any Sites or Services deviating from 'OK'")
+                .Callback(value => do_hide_long_output = value);
+
+            p.Setup<string>('u', "expected-state")
+                .Callback(value => expected_state = value)
+                .WithDescription("Argument to provide the expected State of the AppPool or Site, used together with --single-check");
+
+            p.Setup<bool>('w', "icinga2")
+                .WithDescription("\tSwitch used in the Icinga2 CommandDefinition, returns output and perfcounter to the correct class. Do not use via command line.")
+                .Callback(value => do_i2 = value);
+
+            p.Setup<bool>('W', "single-check")
+                .WithDescription("\tSwitch used together with the Icinga2 Auto Apply rules, this is set when there is a single Site or AppPool to check. Do take great care if you use this outside of the auto apply rules.")
+                .Callback(value => do_singluar_check = value);
+
+            p.Setup<string>('x', "split-by")
+                .WithDescription("\tArgument used to specify what splits all Sites and AppPool arguments. Default is a single space, ' '.")
+                .Callback(value => split_by = value);
+
+            p.Setup<bool>('X', "inv-hide-empty")
+                .WithDescription("Switch to hide empty vars from inventory output.")
+                .Callback(value => do_skip_empty_vars = value);
+
+            p.Setup<bool>('y', "inv-running-only")
+                .WithDescription("Switch to only inventory running Sites and/or AppPools, depending on what has been selected for inventory")
+                .Callback(value => do_all_running_only = value);
+
+            p.Setup<bool>('z', "verbose")
+                .Callback(value => do_verbose = value)
+                .WithDescription("\tSwitch to use when trying to figure out why a service is not included, excluded or similarly when the returned output is not as expected")
+                .SetDefault(false);
+
+            p.Setup<bool>('Z', "debug")
+                .Callback(value => do_debug = value)
+                .WithDescription("\t\tSwitch to to get maximum verbosity (for debugging)")
+                .SetDefault(false);
 
             p.SetupHelp("?", "help")
                 .Callback(text => Console.WriteLine(text))
                 .UseForEmptyArgs()
-                .WithHeader("\t" + System.AppDomain.CurrentDomain.FriendlyName + " - Windows Service Status plugin for Icinga2, Icinga, Centreon, Shinken, Naemon and other nagios like systems.\n\tVersion: " + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
+                .WithHeader(System.AppDomain.CurrentDomain.FriendlyName + " - Windows Service Status plugin for Icinga2, Icinga, Centreon, Shinken, Naemon and other nagios like systems.\n\tVersion: " + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
 
             var result = p.Parse(args);
 
@@ -220,72 +228,29 @@ namespace MonitoringPluginsForWindows
                 return (int)ServiceState.ServiceUnknown;
             }
 
-            if (temp_excluded_sites.Count > 0)
-            {
-                excluded_sites = temp_excluded_sites.Select(i => i.ToString()).ToArray();
-                PrintArray("excluded_sites", excluded_sites);
-            }
-            if (temp_included_sites.Count > 0)
-            {
-                included_sites = temp_included_sites.Select(i => i.ToString()).ToArray();
-                PrintArray("included_sites", included_sites);
-            }
-            if (temp_stopped_sites.Count > 0)
-            {
-                stopped_sites = temp_stopped_sites.Select(i => i.ToString()).ToArray();
-                PrintArray("stopped_sites", stopped_sites);
-            }
-            if (temp_warn_sites.Count > 0)
-            {
-                warn_sites = temp_warn_sites.Select(i => i.ToString()).ToArray();
-                PrintArray("warn_sites", warn_sites);
-            }
-            if (temp_excluded_apppools.Count > 0)
-            {
-                excluded_apppools = temp_excluded_apppools.Select(i => i.ToString()).ToArray();
-                PrintArray("excluded_apppools", excluded_apppools);
-            }
-            if (temp_included_apppools.Count > 0)
-            {
-                included_apppools = temp_included_apppools.Select(i => i.ToString()).ToArray();
-                PrintArray("included_apppools", included_apppools);
-            }
-            if (temp_stopped_apppools.Count > 0)
-            {
-                stopped_apppools = temp_stopped_apppools.Select(i => i.ToString()).ToArray();
-                PrintArray("stopped_apppools", stopped_apppools);
-            }
-            if (temp_warn_apppools.Count > 0)
-            {
-                warn_apppools = temp_warn_apppools.Select(i => i.ToString()).ToArray();
-                PrintArray("warn_apppools", warn_apppools);
-            }
-
-
             // Lets see which of the supplied switches changed anything in the include/exclude/stopped context
-            CalculateDefaultValues(excluded_sites, included_sites, stopped_sites, warn_sites, excluded_apppools, included_apppools, stopped_apppools, warn_apppools);
+            HandleArguments(temp_excluded_sites, temp_included_sites, temp_stopped_sites, temp_warn_sites, 
+                temp_excluded_apppools, temp_included_apppools, temp_stopped_apppools, temp_warn_apppools, split_by);
 
             // Inventory is blocked from running at the same time as other checks, thus it is run first if specified.
             if (do_inventory_apppools == true || do_inventory_sites == true)
             {
-                temp = IisInventory(do_sites, do_apppools, do_inventory_sites, do_inventory_apppools, excluded_apppools, included_apppools,
-                    excluded_sites, included_sites, inventory_format, inventory_level, do_all_running_only, do_skip_empty_vars, do_skip_empty_apppools);
+                temp = IisInventory(do_sites, do_apppools, do_inventory_sites, do_inventory_apppools, inventory_format, inventory_level, do_all_running_only, do_skip_empty_vars, do_skip_empty_apppools);
                 return temp;
             }
 
             if (do_apppools == true)
             {
-                returncode = CheckAllAppPools(returncode, do_perfcounter_apppools, excluded_apppools, included_apppools, stopped_apppools, warn_apppools, do_singluar_check, expected_state);
+                returncode = CheckAllAppPools(returncode, do_perfcounter_apppools, do_singluar_check, expected_state);
             }
             if (do_sites == true)
             {
-                returncode = CheckAllSites(returncode, do_perfcounter_sites, excluded_sites, included_sites, stopped_sites, warn_sites, do_singluar_check, expected_state);
+                returncode = CheckAllSites(returncode, do_perfcounter_sites, do_singluar_check, expected_state);
             }
 
-            returncode = HandleExitText(returncode);
+            returncode = HandleExitText(returncode, do_hide_long_output);
 
             return (int)returncode;
-
         }
 
         private static FluentCommandLineParser GetP()
@@ -293,9 +258,75 @@ namespace MonitoringPluginsForWindows
             return new FluentCommandLineParser();
         }
 
-        private static void CalculateDefaultValues(string[] excluded_sites, string[] included_sites, string[] stopped_sites, string[] warn_sites,
-            string[] excluded_apppools, string[] included_apppools, string[] stopped_apppools, string[] warn_apppools)
+        private static string[] SplitList(List<string> items, string split_by)
         {
+            if (split_by == null)
+            {
+                throw new ArgumentNullException("split_by");
+            }
+            else if (split_by == " ")
+            {
+                return items.ToArray();
+            }
+            else
+            {
+                return items.Select(item => item.Split(split_by.ToCharArray()))
+                            .SelectMany(str => str)
+                            .ToArray();
+            }
+        }
+
+        private static void HandleArguments(List<string> temp_excluded_sites, List<string> temp_included_sites, List<string> temp_stopped_sites, List<string> temp_warn_sites,
+            List<string> temp_excluded_apppools, List<string> temp_included_apppools, List<string> temp_stopped_apppools, List<string> temp_warn_apppools, string split_by)
+        {
+            if (temp_excluded_sites.Count > 0)
+            {
+                excluded_sites = SplitList(temp_excluded_sites, split_by);
+                PrintArray("excluded_sites", excluded_sites);
+            }
+
+            if (temp_included_sites.Count > 0)
+            {
+                included_sites = SplitList(temp_included_sites, split_by);
+                PrintArray("included_sites", included_sites);
+            }
+
+            if (temp_stopped_sites.Count > 0)
+            {
+                stopped_sites = SplitList(temp_stopped_sites, split_by);
+                PrintArray("stopped_sites", stopped_sites);
+            }
+
+            if (temp_warn_sites.Count > 0)
+            {
+                warn_sites = SplitList(temp_warn_sites, split_by);
+                PrintArray("warn_sites", warn_sites);
+            }
+
+            if (temp_excluded_apppools.Count > 0)
+            {
+                excluded_apppools = SplitList(temp_excluded_apppools, split_by);
+                PrintArray("excluded_apppools", excluded_apppools);
+            }
+
+            if (temp_included_apppools.Count > 0)
+            {
+                included_apppools = SplitList(temp_included_apppools, split_by);
+                PrintArray("included_apppools", included_apppools);
+            }
+
+            if (temp_stopped_apppools.Count > 0)
+            {
+                stopped_apppools = SplitList(temp_stopped_apppools, split_by);
+                PrintArray("stopped_apppools", stopped_apppools);
+            }
+
+            if (temp_warn_apppools.Count > 0)
+            {
+                warn_apppools = SplitList(temp_warn_apppools, split_by);
+                PrintArray("warn_apppools", warn_apppools);
+            }
+
             if (excluded_sites.Contains("thisshouldprobablyneverbeoverwrittenbysomething"))
             {
                 if (do_verbose == true)
@@ -354,9 +385,8 @@ namespace MonitoringPluginsForWindows
             return;
         }
 
-        private static int HandleExitText(int returncode)
+        private static int HandleExitText(int returncode, bool do_hide_long_output)
         {
-
             // ORDER the output
             string output = "";
             if ((errorAppPools == true) && (errorSites == false))
@@ -395,38 +425,39 @@ namespace MonitoringPluginsForWindows
             }
 
             string outputLong = "";
-
-            int x = 1;
-            if (iNumberOfSites > 1)
-            { 
-                foreach (string outputW in listSiteOutput)
+            if (do_hide_long_output == false) { 
+                int x = 1;
+                if (iNumberOfSites > 1)
                 {
-                    if (x < listSiteOutput.Count)
+                    foreach (string outputW in listSiteOutput)
                     {
-                        outputLong = outputLong + outputW + "\n";
+                        if (x < listSiteOutput.Count)
+                        {
+                            outputLong = outputLong + outputW + "\n";
+                        }
+                        else
+                        {
+                            outputLong = outputLong + outputW;
+                        }
+                        x++;
                     }
-                    else
-                    {
-                        outputLong = outputLong + outputW;
-                    }
-                    x++;
                 }
-            }
 
-            int y = 1;
-            if (iNumberOfAppPools > 1)
-            { 
-                foreach (string outputA in listAppPoolOutput)
+                int y = 1;
+                if (iNumberOfAppPools > 1)
                 {
-                    if (y < listAppPoolOutput.Count)
+                    foreach (string outputA in listAppPoolOutput)
                     {
-                        outputLong = outputLong + outputA + "\n";
+                        if (y < listAppPoolOutput.Count)
+                        {
+                            outputLong = outputLong + outputA + "\n";
+                        }
+                        else
+                        {
+                            outputLong = outputLong + outputA;
+                        }
+                        y++;
                     }
-                    else
-                    {
-                        outputLong = outputLong + outputA;
-                    }
-                    y++;
                 }
             }
             string perfdata = "";
@@ -439,15 +470,23 @@ namespace MonitoringPluginsForWindows
             {
                 CheckResult IcingaOutput = new CheckResult();
                 IcingaOutput.State = (ServiceState)returncode;
-                IcingaOutput.Output = output + outputLong;
+                if (do_hide_long_output == false)
+                {
+                    IcingaOutput.Output = output + outputLong;
+                }
+                else
+                {
+                    IcingaOutput.Output = output;
+                }
+                
                 IcingaOutput.PerformanceData = perfdata;
             }
             else
             {
-                Console.WriteLine(output);
-                if (iNumberOfAppPools > 1 || iNumberOfSites > 1)
-                    Console.WriteLine(outputLong);
-                Console.WriteLine(" | " + perfdata);
+                Console.Write(output);
+                if ((iNumberOfAppPools > 1 || iNumberOfSites > 1) && do_hide_long_output == false)
+                    Console.Write("\n" + outputLong);
+                Console.Write(" | " + perfdata);
             }
 
             return returncode;
@@ -490,12 +529,10 @@ namespace MonitoringPluginsForWindows
                 }
                 return suggested_returncode;
             }
-
         }
 
-        private static int IisInventory(bool do_sites, bool do_apppools, bool do_inventory_sites, bool do_inventory_apppools, string[] excluded_apppools,
-                string[] included_apppools, string[] excluded_sites, string[] included_sites, string inventory_format, string inventory_level, bool do_running_only, 
-                bool do_skip_empty_vars, bool do_skip_empty_apppools)
+        private static int IisInventory(bool do_sites, bool do_apppools, bool do_inventory_sites, bool do_inventory_apppools,
+            string inventory_format, string inventory_level, bool do_running_only, bool do_skip_empty_vars, bool do_skip_empty_apppools)
         {
             var iisManager = new ServerManager();
 
@@ -517,11 +554,10 @@ namespace MonitoringPluginsForWindows
                 if (do_verbose)
                     Console.WriteLine("INFO: Inventory of Sites to check later");
 
-                temp = InventorySites(iisManager, excluded_sites, included_sites, false, false, false);
+                temp = InventorySites(iisManager, false, false, false);
 
                 if (temp == false)
                     return (int)ServiceState.ServiceUnknown;
-
             }
 
             if (do_inventory_sites)
@@ -529,11 +565,10 @@ namespace MonitoringPluginsForWindows
                 if (do_verbose)
                     Console.WriteLine("INFO: Inventory of Sites");
 
-                temp = InventorySites(iisManager, excluded_sites, included_sites, bVerboseInventory, do_running_only, true);
+                temp = InventorySites(iisManager, bVerboseInventory, do_running_only, true);
 
                 if (temp == false)
                     return (int)ServiceState.ServiceUnknown;
-
             }
 
             if (do_apppools)
@@ -541,11 +576,10 @@ namespace MonitoringPluginsForWindows
                 if (do_verbose)
                     Console.WriteLine("INFO: Inventory of AppPools to check later");
 
-                temp = InventoryAppPools(iisManager, excluded_apppools, included_apppools, false, false, false, false);
+                temp = InventoryAppPools(iisManager, false, false, false, false);
 
                 if (temp == false)
                     return (int)ServiceState.ServiceUnknown;
-
             }
 
             if (do_inventory_apppools)
@@ -553,11 +587,10 @@ namespace MonitoringPluginsForWindows
                 if (do_verbose)
                     Console.WriteLine("INFO: Inventory of AppPools");
 
-                temp = InventoryAppPools(iisManager, excluded_apppools, included_apppools, bVerboseInventory, do_running_only, true, do_skip_empty_apppools);
+                temp = InventoryAppPools(iisManager, bVerboseInventory, do_running_only, true, do_skip_empty_apppools);
 
                 if (temp == false)
                     return (int)ServiceState.ServiceUnknown;
-
             }
 
             if (do_inventory_apppools || do_inventory_sites)
@@ -588,7 +621,6 @@ namespace MonitoringPluginsForWindows
 
         private static bool InventoryOutputJSON()
         {
-
             string json = JsonConvert.SerializeObject(listIISInventory, Formatting.Indented);
             Console.WriteLine(json);
 
@@ -606,7 +638,6 @@ namespace MonitoringPluginsForWindows
             string i2conf1 = "";
             if (do_inventory_sites == true)
             {
-
                 i2conf1 = IcingaSerializer.Serialize(listStoppedSites.ToArray(), do_skip_empty_vars);
                 Console.WriteLine("vars.inv.iis.sites.stopped = " + i2conf1);
 
@@ -623,7 +654,6 @@ namespace MonitoringPluginsForWindows
 
             if (do_inventory_apppools == true)
             {
-
                 i2conf1 = IcingaSerializer.Serialize(listStoppedAppPools.ToArray(), do_skip_empty_vars);
                 Console.WriteLine("vars.inv.iis.apppools.stopped = " + i2conf1);
 
@@ -636,7 +666,6 @@ namespace MonitoringPluginsForWindows
                     Console.WriteLine("vars.inv.iis.apppool[\"" + AppPool.Name + "\"] = " + i2conf);
                     Console.WriteLine("");
                 }
-
             }
 
             return true;
@@ -667,13 +696,10 @@ namespace MonitoringPluginsForWindows
                 {
                     string readable = ReadableSerializer.Serialize(AppPool, do_skip_empty_vars);
                     Console.WriteLine(readable);
-
                 }
-
             }
 
             return true;
-
         }
 
         public static int IisInstalled()
@@ -694,9 +720,8 @@ namespace MonitoringPluginsForWindows
             }
         }
 
-        private static bool InventorySites(ServerManager iisManager, string[] excluded_sites, string[] included_sites, bool bVerboseInventory, bool do_running_only, bool do_inventory)
+        private static bool InventorySites(ServerManager iisManager, bool bVerboseInventory, bool do_running_only, bool do_inventory)
         {
-
             SiteCollection sites = iisManager.Sites;
             foreach (Site Site in sites)
             {
@@ -740,7 +765,6 @@ namespace MonitoringPluginsForWindows
 
                         continue;
                     }
-
                 }
 
                 if (do_inventory == true && Site.State == ObjectState.Started)
@@ -756,18 +780,16 @@ namespace MonitoringPluginsForWindows
                     Console.WriteLine("AppPool in a bad state during inventory!");
                 }
 
-
                 Array SiteBindings = InventorySiteBindings(Site, bVerboseInventory);
                 Array SiteApplications = InventorySiteApplications(Site, bVerboseInventory);
 
                 listSitesOnComputer.Add(new WebSite(Site.Id, Site.Name, Site.ServerAutoStart, Site.IsLocallyStored, Site.State.ToString(), Site.LogFile.Directory,
                     Site.LogFile.Enabled, SiteBindings, SiteApplications));
-
             }
             return true;
         }
 
-        private static bool InventoryAppPools(ServerManager iisManager, string[] excluded_apppools, string[] included_apppools, bool bVerboseInventory, bool do_running_only, bool do_inventory, bool do_skip_empty_apppools)
+        private static bool InventoryAppPools(ServerManager iisManager, bool bVerboseInventory, bool do_running_only, bool do_inventory, bool do_skip_empty_apppools)
         {
             ApplicationPoolCollection appPools = iisManager.ApplicationPools;
 
@@ -819,7 +841,7 @@ namespace MonitoringPluginsForWindows
                 {
                     int NumberOfTimesUsed = GetNumberApplicationsInAppPool(iisManager, sAppPoolName);
                     if (NumberOfTimesUsed == 0)
-                    { 
+                    {
                         if (do_verbose)
                             Console.WriteLine("INFO: AppPool '" + sAppPoolName + "' is not used by any Applications, this is being skipped due to skip-empty-apppools set");
                         // Skip, this AppPool is not used anywhere
@@ -848,11 +870,11 @@ namespace MonitoringPluginsForWindows
                     AppPool.ProcessModel.IdleTimeout, AppPool.ProcessModel.LoadUserProfile, AppPool.ProcessModel.MaxProcesses, AppPool.ProcessModel.PingingEnabled,
                     AppPool.ProcessModel.UserName, AppPool.Cpu.SmpAffinitized, Enum.GetName(typeof(LoadBalancerCapabilities), AppPool.Failure.LoadBalancerCapabilities)
                     , ArrWorkerProcesses));
-
             }
             return true;
         }
-        private static int GetNumberApplicationsInAppPool(ServerManager iisManager , string AppPoolName)
+
+        private static int GetNumberApplicationsInAppPool(ServerManager iisManager, string AppPoolName)
         {
             int NumberOfTimesUsed = 0;
             foreach (Site site in iisManager.Sites)
@@ -865,6 +887,7 @@ namespace MonitoringPluginsForWindows
             }
             return NumberOfTimesUsed;
         }
+
         private static Array InventoryWorkerProcesses(ApplicationPool AppPool, bool bVerboseInventory)
         {
             List<AppPoolWorkerProcesses> listAppPoolWorkerProcesses = new List<AppPoolWorkerProcesses>();
@@ -875,7 +898,6 @@ namespace MonitoringPluginsForWindows
 
             foreach (var WorkerProcess in AppPool.WorkerProcesses)
             {
-
                 Array temp_AppPoolWorkerProcessAppDomains = InventoryWPAppDomains(WorkerProcess.ApplicationDomains, AppPool, bVerboseInventory);
 
                 listAppPoolWorkerProcesses.Add(new AppPoolWorkerProcesses(WorkerProcess.AppPoolName, WorkerProcess.IsLocallyStored,
@@ -896,12 +918,10 @@ namespace MonitoringPluginsForWindows
 
             foreach (var ApplicationDomain in WPAppDomains)
             {
-
                 //Array ArrWorkerProcesses = InventoryWorkerProcesses(AppPool, bVerboseInventory);
                 Array ArrWorkerProcesses = new Array[] { null };
                 listAppPoolWPApplicationDomains.Add(new AppPoolWPAppDomains(ApplicationDomain.Id, ApplicationDomain.Idle,
                     ApplicationDomain.IsLocallyStored, ApplicationDomain.PhysicalPath, ApplicationDomain.VirtualPath, ArrWorkerProcesses));
-
             }
 
             Array ArrWPAppDomains = listAppPoolWPApplicationDomains.ToArray();
@@ -923,7 +943,7 @@ namespace MonitoringPluginsForWindows
                 }
 
                 string certificateStore = null;
-                if (Binding.CertificateStoreName != null)    
+                if (Binding.CertificateStoreName != null)
                     certificateStore = Binding.CertificateStoreName.ToString();
 
                 string bindingInformation = null;
@@ -947,7 +967,6 @@ namespace MonitoringPluginsForWindows
                 {
                     Console.WriteLine("Error in reading sitebinding for site '" + site.Name.ToString() + "', protocol '" + protocol + "', error: " + e);
                 }
-
             }
 
             Array ArrSiteBindings = listSiteBindings.ToArray();
@@ -967,7 +986,6 @@ namespace MonitoringPluginsForWindows
                 Array VirtualDirectories = InventorySiteAppVirtualDirectories(Application.VirtualDirectories, bVerboseInventory);
                 listSiteApplications.Add(new SiteApplications(Application.ApplicationPoolName, Application.EnabledProtocols,
                     Application.IsLocallyStored, Application.Path, VirtualDirectories));
-
             }
 
             Array ArrSiteApplications = listSiteApplications.ToArray();
@@ -992,14 +1010,12 @@ namespace MonitoringPluginsForWindows
             return ArrSiteAppVirtDirs;
         }
 
-        public static int CheckAllSites(int returncode, bool do_perfcounter_sites, string[] excluded_sites,
-            string[] included_sites, string[] stopped_sites, string[] warn_sites, bool do_singluar_check, 
-            string expected_state)
+        public static int CheckAllSites(int returncode, bool do_perfcounter_sites, bool do_singluar_check, string expected_state)
         {
             var iisManager = new ServerManager();
 
             bool temp = false;
-            temp = InventorySites(iisManager, excluded_sites, included_sites, false, false, false);
+            temp = InventorySites(iisManager, false, false, false);
             if (temp == false)
                 return (int)ServiceState.ServiceUnknown;
 
@@ -1011,7 +1027,7 @@ namespace MonitoringPluginsForWindows
             string output;
 
             Dictionary<String, WebSite> listOverSites = listSitesOnComputer.ToDictionary(o => o.Name, o => o);
-            
+
             // Loop for each site in sites
             foreach (var site in listOverSites.Values)
             {
@@ -1051,7 +1067,6 @@ namespace MonitoringPluginsForWindows
                 if (site.ServerAutoStart == true)
                 {
                     output = "Site '" + sSiteName + "' set to AutoStart and site state is '" + site.State.ToString() + "'";
-
                 }
                 else
                 {
@@ -1138,13 +1153,11 @@ namespace MonitoringPluginsForWindows
                     errorSites = true;
                 }
 
-
                 if (do_perfcounter_sites)
                     output = PerfCounterSites(sSiteName, output, do_singluar_check);
 
                 listSiteOutput.Add(output);
                 iNumberOfSites++;
-
             }
 
             if (errorSites == false)
@@ -1176,14 +1189,12 @@ namespace MonitoringPluginsForWindows
             return returncode;
         }
 
-        public static int CheckAllAppPools(int returncode, bool do_perfcounter_apppools, string[] excluded_apppools,
-            string[] included_apppools, string[] stopped_apppools, string[] warn_apppools, bool do_singluar_check,
-            string expected_state)
+        public static int CheckAllAppPools(int returncode, bool do_perfcounter_apppools, bool do_singluar_check, string expected_state)
         {
             var iisManager = new ServerManager();
 
             bool temp = false;
-            temp = InventoryAppPools(iisManager, excluded_apppools, included_apppools, false, false, false, false);
+            temp = InventoryAppPools(iisManager, false, false, false, false);
             if (temp == false)
                 return (int)ServiceState.ServiceUnknown;
 
@@ -1195,7 +1206,7 @@ namespace MonitoringPluginsForWindows
             string output;
 
             Dictionary<String, AppPool> listOverAppPools = listAppPoolsOnComputer.ToDictionary(o => o.Name, o => o);
-            
+
             // Loop for each AppPool in appPools list
             foreach (var apppool in listOverAppPools.Values)
             {
@@ -1229,13 +1240,12 @@ namespace MonitoringPluginsForWindows
                     }
                     bAppPoolShouldBeWarned = true;
                 }
-                
+
                 output = "";
 
                 if (apppool.AutoStart == true)
                 {
                     output = "AppPool '" + sAppPoolName + "' set to AutoStart and apppool state is '" + apppool.State.ToString() + "'";
-
                 }
                 else
                 {
@@ -1327,7 +1337,6 @@ namespace MonitoringPluginsForWindows
 
                 listAppPoolOutput.Add(output);
                 iNumberOfAppPools++;
-
             }
 
             if (errorAppPools == false)
@@ -1361,7 +1370,6 @@ namespace MonitoringPluginsForWindows
 
         public static void CountSiteState(string status)
         {
-
             if (status == ObjectState.Started.ToString())
             {
                 iNumberOfStartedSites++;
@@ -1386,7 +1394,6 @@ namespace MonitoringPluginsForWindows
 
         public static void CountAppPoolState(string status)
         {
-
             if (status == ObjectState.Started.ToString())
             {
                 iNumberOfStartedAppPools++;
@@ -1408,7 +1415,6 @@ namespace MonitoringPluginsForWindows
                 iNumberOfUnknownAppPools++;
             }
         }
-
 
         private static string PerfCounterSites(string sSiteName, string output, bool do_singluar_check)
         {
@@ -1479,8 +1485,5 @@ namespace MonitoringPluginsForWindows
 
             return output;
         }
-
-
     }
-
 }
