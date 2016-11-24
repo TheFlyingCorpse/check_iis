@@ -177,6 +177,7 @@ namespace MonitoringPluginsForWindows
                 .WithDescription("Switch which sets do not check or inventory AppPools which are empty")
                 .Callback(value => do_skip_empty_apppools = value);
 
+
             p.Setup<bool>('T', "hide-long-output")
                 .WithDescription("Switch to hide the long service output, only prints the summary output and any Sites or AppPools deviating from 'OK'")
                 .Callback(value => do_hide_long_output = value);
@@ -447,7 +448,13 @@ namespace MonitoringPluginsForWindows
                         }
                         else
                         {
-                            outputLong = outputLong + outputW;
+                            if (iNumberOfAppPools > 0) { 
+                                outputLong = outputLong + outputW + "\n"; 
+                            }
+                            else
+                            {
+                                outputLong = outputLong + outputW;
+                            }
                         }
                         x++;
                     }
@@ -1073,8 +1080,9 @@ namespace MonitoringPluginsForWindows
                 }
 
                 output = "";
+                bool bSiteIsAutostart = site.ServerAutoStart;
 
-                if (site.ServerAutoStart == true)
+                if (bSiteIsAutostart)
                 {
                     output = "Site '" + sSiteName + "' set to AutoStart and site state is '" + site.State.ToString() + "'";
                 }
@@ -1082,6 +1090,7 @@ namespace MonitoringPluginsForWindows
                 {
                     output = "Site '" + sSiteName + "' not set to AutoStart and site state is '" + site.State.ToString() + "'";
                 }
+
                 // OK
                 if (do_singluar_check == true && bExpectedStateSet == true && site.State == expected_state)
                 {
