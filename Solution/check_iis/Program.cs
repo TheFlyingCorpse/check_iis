@@ -89,6 +89,7 @@ namespace MonitoringPluginsForWindows
             bool do_singluar_check = false;
             bool do_skip_empty_apppools = false;
             bool do_hide_long_output = false;
+            bool do_only_autostart_sites = false;
 
             string inventory_format = "readable";
             string inventory_level = "normal";
@@ -177,6 +178,9 @@ namespace MonitoringPluginsForWindows
                 .WithDescription("Switch which sets do not check or inventory AppPools which are empty")
                 .Callback(value => do_skip_empty_apppools = value);
 
+            p.Setup<bool>('M', "only-autostarted-sites")
+                .WithDescription("Switch which sets do only check websites set to autostart")
+                .Callback(value => do_only_autostart_sites = value);
 
             p.Setup<bool>('T', "hide-long-output")
                 .WithDescription("Switch to hide the long service output, only prints the summary output and any Sites or AppPools deviating from 'OK'")
@@ -248,7 +252,7 @@ namespace MonitoringPluginsForWindows
             }
             if (do_sites == true)
             {
-                returncode = CheckAllSites(returncode, do_perfcounter_sites, do_singluar_check, expected_state);
+                returncode = CheckAllSites(returncode, do_perfcounter_sites, do_singluar_check, do_only_autostart_sites, expected_state);
             }
 
             returncode = HandleExitText(returncode, do_hide_long_output);
@@ -1027,7 +1031,7 @@ namespace MonitoringPluginsForWindows
             return ArrSiteAppVirtDirs;
         }
 
-        public static int CheckAllSites(int returncode, bool do_perfcounter_sites, bool do_singluar_check, string expected_state)
+        public static int CheckAllSites(int returncode, bool do_perfcounter_sites, bool do_singluar_check, bool do_only_autostart_sites, string expected_state)
         {
             var iisManager = new ServerManager();
 
@@ -1120,7 +1124,10 @@ namespace MonitoringPluginsForWindows
                     errorSites = true;
                 }
                 else if ((bSiteShouldBeStopped == true && site.State == ObjectState.Stopped.ToString()) ||
-                    (bSiteShouldBeStopped == false && site.State == ObjectState.Started.ToString()))
+                    (bSiteShouldBeStopped == false && site.State == ObjectState.Started.ToString()) ||
+                        (bSiteIsAutostart == false && do_only_autostart_sites == true && site.State == ObjectState.Stopped.ToString()) ||
+                        (bSiteIsAutostart == true && do_only_autostart_sites == true && site.State == ObjectState.Started.ToString()) ||
+                        (bSiteIsAutostart == true && do_only_autostart_sites == true && site.State == ObjectState.Starting.ToString()))
                 {
                     output = output + " which is correct";
 
@@ -1132,7 +1139,9 @@ namespace MonitoringPluginsForWindows
                 else if ((bSiteShouldBeStopped == true && site.State == ObjectState.Started.ToString()) ||
                     (bSiteShouldBeStopped == true && site.State == ObjectState.Starting.ToString()) ||
                     (bSiteShouldBeStopped == true && site.State == ObjectState.Stopping.ToString()) ||
-                    (bSiteShouldBeStopped == true && site.State == ObjectState.Unknown.ToString()))
+                    (bSiteShouldBeStopped == true && site.State == ObjectState.Unknown.ToString()) ||
+                    ((bSiteIsAutostart == true && do_only_autostart_sites == true && site.State != ObjectState.Starting.ToString()) &&
+                    (bSiteIsAutostart == true && do_only_autostart_sites == true && site.State != ObjectState.Starting.ToString())))
                 {
                     if (bSiteShouldBeWarned == true)
                     {
