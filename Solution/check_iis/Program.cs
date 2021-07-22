@@ -1469,10 +1469,10 @@ namespace MonitoringPluginsForWindows
                 listPerfData.Add(" '" + prefix + "Total Connection Attemps'=" + total_connection_attempts.NextValue() + "c;;;;");
 
                 PerformanceCounter total_bytes_sent = new PerformanceCounter("Web Service", "Total Bytes Sent", sSiteName, ".");
-                listPerfData.Add(" '" + prefix + "Total Bytes Sent'=" + total_bytes_sent.NextValue() + "B;;;;");
+                listPerfData.Add(" '" + prefix + "Total MBytes Sent'=" + toMbyte(total_bytes_sent.NextValue()) + "MByte;;;;");
 
                 PerformanceCounter total_bytes_received = new PerformanceCounter("Web Service", "Total Bytes Received", sSiteName, ".");
-                listPerfData.Add(" '" + prefix + "Total Bytes Received'=" + total_bytes_received.NextValue() + "B;;;;");
+                listPerfData.Add(" '" + prefix + "Total MBytes Received'=" + toMbyte(total_bytes_received.NextValue()) + "MByte;;;;");
 
                 PerformanceCounter current_connections = new PerformanceCounter("Web Service", "Current Connections", sSiteName, ".");
                 listPerfData.Add(" '" + prefix + "Current Connections'=" + current_connections.NextValue() + "B;;;;");
@@ -1484,6 +1484,11 @@ namespace MonitoringPluginsForWindows
             }
 
             return output;
+        }
+
+        private static float toMbyte(float b)
+        {
+            return (b / (1024 * 1024));
         }
 
         private static string PerfCounterAppPools(string sAppPoolName, string output, bool do_singluar_check)
