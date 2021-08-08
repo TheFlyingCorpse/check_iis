@@ -754,65 +754,73 @@ namespace MonitoringPluginsForWindows
             {
                 string sSiteName = Site.Name.ToString();
 
-                if (bDefaultSitesExcluded == true)
-                {
-                    // No sites to exclude here.
-                }
-                else if (excluded_sites.Contains(sSiteName))
-                {
-                    if (do_verbose == true)
-                        Console.WriteLine("INFO: Site in exclude list: " + sSiteName);
-
-                    continue;
-                }
-                if (bDefaultSitesIncluded == true)
-                {
-                    // No sites to skip here.
-                }
-                else if (included_sites.Contains(sSiteName))
-                {
-                    if (do_verbose == true)
-                        Console.WriteLine("INFO: Included Site: " + sSiteName);
-                }
-                else if (bDefaultSitesIncluded == false)
-                {
-                    if (do_verbose == true)
-                        Console.WriteLine("INFO: Site not in include list: " + sSiteName);
-
-                    continue;
-                }
-
-                if (do_running_only == true)
-                {
-                    // Skip any sites (for inventory purposes) that are not started.
-                    if (Site.State != ObjectState.Started)
+                try
+                { 
+                    if (bDefaultSitesExcluded == true)
+                    {
+                        // No sites to exclude here.
+                    }
+                    else if (excluded_sites.Contains(sSiteName))
                     {
                         if (do_verbose == true)
-                            Console.WriteLine("INFO: Skipping Site for inventory, it is not running: ");
+                            Console.WriteLine("INFO: Site in exclude list: " + sSiteName);
 
                         continue;
                     }
-                }
+                    if (bDefaultSitesIncluded == true)
+                    {
+                        // No sites to skip here.
+                    }
+                    else if (included_sites.Contains(sSiteName))
+                    {
+                        if (do_verbose == true)
+                            Console.WriteLine("INFO: Included Site: " + sSiteName);
+                    }
+                    else if (bDefaultSitesIncluded == false)
+                    {
+                        if (do_verbose == true)
+                            Console.WriteLine("INFO: Site not in include list: " + sSiteName);
 
-                if (do_inventory == true && Site.State == ObjectState.Started)
-                {
-                    listStartedSites.Add(sSiteName);
-                }
-                else if (do_inventory == true && Site.State == ObjectState.Stopped)
-                {
-                    listStoppedSites.Add(sSiteName);
-                }
-                else if (do_inventory == true)
-                {
-                    Console.WriteLine("AppPool in a bad state during inventory!");
-                }
+                        continue;
+                    }
 
-                Array SiteBindings = InventorySiteBindings(Site, bVerboseInventory);
-                Array SiteApplications = InventorySiteApplications(Site, bVerboseInventory);
+                    if (do_running_only == true)
+                    {
+                        // Skip any sites (for inventory purposes) that are not started.
+                        if (Site.State != ObjectState.Started)
+                        {
+                            if (do_verbose == true)
+                                Console.WriteLine("INFO: Skipping Site for inventory, it is not running: ");
 
-                listSitesOnComputer.Add(new WebSite(Site.Id, Site.Name, Site.ServerAutoStart, Site.IsLocallyStored, Site.State.ToString(), Site.LogFile.Directory,
-                    Site.LogFile.Enabled, SiteBindings, SiteApplications));
+                            continue;
+                        }
+                    }
+
+                    if (do_inventory == true && Site.State == ObjectState.Started)
+                    {
+                        listStartedSites.Add(sSiteName);
+                    }
+                    else if (do_inventory == true && Site.State == ObjectState.Stopped)
+                    {
+                        listStoppedSites.Add(sSiteName);
+                    }
+                    else if (do_inventory == true)
+                    {
+                        Console.WriteLine("AppPool in a bad state during inventory!");
+                    }
+
+                    Array SiteBindings = InventorySiteBindings(Site, bVerboseInventory);
+                    Array SiteApplications = InventorySiteApplications(Site, bVerboseInventory);
+
+                    listSitesOnComputer.Add(new WebSite(Site.Id, Site.Name, Site.ServerAutoStart, Site.IsLocallyStored, Site.State.ToString(), Site.LogFile.Directory,
+                        Site.LogFile.Enabled, SiteBindings, SiteApplications));
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("[UNKNOWN] Error parsing WebSite '" + sSiteName + "' - Valid AppPool? - Message: " + e);
+                }
             }
+        
             return true;
         }
 
