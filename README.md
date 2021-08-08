@@ -20,7 +20,7 @@ This executable assumes the following:
 ## Usage:	
 
 	check_iis.exe - Windows Service Status plugin for Icinga2, Icinga, Centreon, Shinken, Naemon and other nagios like systems
-        Version: 0.9.5690.38448
+        Version: 0.10.5690.38449
 
         a:inventory-websites            Switch to use to provide inventory of Sites
         A:inventory-apppools            Switch to use to provide inventory of AppPools
@@ -33,6 +33,7 @@ This executable assumes the following:
         h:stopped-sites                 The specified Sites are checked that they are stopped
         H:warn-sites                    These specified Sites will return Warning if they are not in the expected state
         i:perfcounter-sites             Switch to use to get perfcounters from Sites
+		M:perfdata-mbytes               Switch to use to get perfdata as MBytes rather than bytes
         I:excluded-apppools             Excludes AppPools from checks and inventory
         J:included-apppools             Includes AppPools to check while all other AppPools are excluded, affects both checks and inventory
         k:stopped-apppools              The specified AppPools are checked that they are stopped
@@ -333,6 +334,10 @@ All configuration samples below assumes local configuration on agent, configurat
 				set_if = "$iis_perfcounter_sites$"	
 				description = "Switch to use to get perfcounters from Sites"
 			}
+			"--perfdata-bytes" = {
+			set_if = "$iis_perfdata_mbytes$"	
+			description = "Switch to use to get perfdata as MBytes rather than bytes"
+			}
 			"--excluded-apppools" = {
 				value = "$iis_excluded_apppools$"
 				description = "Excludes AppPools from checks and inventory"
@@ -402,6 +407,7 @@ All configuration samples below assumes local configuration on agent, configurat
 		//vars.iis_stopped_sites = ""
 		//vars.iis_warn_sites = ""
 		vars.iis_perfcounter_sites = false
+		vars.iis_perfdata_mbytes = false
 		//vars.iis_excluded_apppools = ""
 		//vars.iis_included_apppools = ""
 		//vars.iis_stopped_apppools = ""

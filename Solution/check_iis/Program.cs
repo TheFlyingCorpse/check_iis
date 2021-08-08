@@ -84,6 +84,7 @@ namespace MonitoringPluginsForWindows
             bool do_apppools = false;
             bool do_perfcounter_sites = false;
             bool do_perfcounter_apppools = false;
+            bool do_perfdata_mbytes = false;
             bool do_all_running_only = false;
             bool do_skip_empty_vars = false;
             bool do_singluar_check = false;
@@ -220,6 +221,11 @@ namespace MonitoringPluginsForWindows
                 .WithDescription("\t\tSwitch to to get maximum verbosity (for debugging)")
                 .SetDefault(false);
 
+            p.Setup<bool>('M', "perfdata-mbytes")
+                .Callback(value => do_perfdata_mbytes = value)
+                .WithDescription("\tArgument used to specify use of Megabytes rather than bytes in perfdata output")
+                .SetDefault(false);
+
             p.SetupHelp("?", "help")
                 .Callback(text => Console.WriteLine(text))
                 .UseForEmptyArgs()
@@ -252,7 +258,7 @@ namespace MonitoringPluginsForWindows
             }
             if (do_sites == true)
             {
-                returncode = CheckAllSites(returncode, do_perfcounter_sites, do_singluar_check, do_only_autostart_sites, expected_state);
+                returncode = CheckAllSites(returncode, do_perfcounter_sites, do_singluar_check, do_only_autostart_sites, do_perfdata_mbytes, expected_state);
             }
 
             returncode = HandleExitText(returncode, do_hide_long_output);
@@ -1031,7 +1037,7 @@ namespace MonitoringPluginsForWindows
             return ArrSiteAppVirtDirs;
         }
 
-        public static int CheckAllSites(int returncode, bool do_perfcounter_sites, bool do_singluar_check, bool do_only_autostart_sites, string expected_state)
+        public static int CheckAllSites(int returncode, bool do_perfcounter_sites, bool do_singluar_check, bool do_only_autostart_sites, bool do_perfdata_mbytes, string expected_state)
         {
             var iisManager = new ServerManager();
 
@@ -1182,7 +1188,7 @@ namespace MonitoringPluginsForWindows
                 }
 
                 if (do_perfcounter_sites)
-                    output = PerfCounterSites(sSiteName, output, do_singluar_check);
+                    output = PerfCounterSites(sSiteName, output, do_singluar_check, do_perfdata_mbytes);
 
                 listSiteOutput.Add(output);
                 iNumberOfSites++;
@@ -1446,7 +1452,7 @@ namespace MonitoringPluginsForWindows
             }
         }
 
-        private static string PerfCounterSites(string sSiteName, string output, bool do_singluar_check)
+        private static string PerfCounterSites(string sSiteName, string output, bool do_singluar_check, bool do_perfdata_mbytes)
         {
             try
             {
@@ -1469,10 +1475,24 @@ namespace MonitoringPluginsForWindows
                 listPerfData.Add(" '" + prefix + "Total Connection Attemps'=" + total_connection_attempts.NextValue() + "c;;;;");
 
                 PerformanceCounter total_bytes_sent = new PerformanceCounter("Web Service", "Total Bytes Sent", sSiteName, ".");
-                listPerfData.Add(" '" + prefix + "Total MBytes Sent'=" + toMbyte(total_bytes_sent.NextValue()) + "MByte;;;;");
+                if (do_perfdata_mbytes)
+                { 
+                    listPerfData.Add(" '" + prefix + "Total MBytes Sent'=" + toMbyte(total_bytes_sent.NextValue()) + "MByte;;;;");
+                }
+                else
+                {
+                    listPerfData.Add(" '" + prefix + "Total MBytes Sent'=" + total_bytes_sent.NextValue() + ";;;;");
+                }
 
                 PerformanceCounter total_bytes_received = new PerformanceCounter("Web Service", "Total Bytes Received", sSiteName, ".");
-                listPerfData.Add(" '" + prefix + "Total MBytes Received'=" + toMbyte(total_bytes_received.NextValue()) + "MByte;;;;");
+                if (do_perfdata_mbytes)
+                {
+                    listPerfData.Add(" '" + prefix + "Total MBytes Received'=" + toMbyte(total_bytes_received.NextValue()) + "MByte;;;;");
+                }
+                else
+                {
+                    listPerfData.Add(" '" + prefix + "Total MBytes Received'=" + total_bytes_received.NextValue() + ";;;;");
+                }
 
                 PerformanceCounter current_connections = new PerformanceCounter("Web Service", "Current Connections", sSiteName, ".");
                 listPerfData.Add(" '" + prefix + "Current Connections'=" + current_connections.NextValue() + "B;;;;");
